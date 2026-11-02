@@ -1,6 +1,6 @@
 # MC 陪玩面板
 
-<img src="logo.png" width="96" align="right" alt="MC 陪玩面板">
+<img src="https://cdn.jsdmirror.com/gh/kld157/astrbot_plugin_mc_panel@main/logo.png" width="96" align="right" alt="MC 陪玩面板">
 
 给 Minecraft 陪玩 bot（xiaoice-mcbot）装在 AstrBot 管理面板里的一个可视化页面。
 
@@ -27,8 +27,10 @@ AstrBot 管理面板 → 插件市场 → 搜索「MC 陪玩面板」→ 安装�
 
 ```bash
 cd /AstrBot/data/plugins
-git clone https://github.com/kld157/astrbot_plugin_mc_panel.git
+git clone https://gh-proxy.com/https://github.com/kld157/astrbot_plugin_mc_panel.git
 ```
+
+`gh-proxy.com` 是克隆加速站，只在这次 clone 时套一层，之后 `git pull` 走的是正常 GitHub 地址。直连拉得动的话把前缀去掉就行。
 
 然后在 AstrBot 管理面板 → 插件管理 → 重载插件。
 
