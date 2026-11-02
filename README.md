@@ -27,10 +27,10 @@ AstrBot 管理面板 → 插件市场 → 搜索「MC 陪玩面板」→ 安装�
 
 ```bash
 cd /AstrBot/data/plugins
-git clone https://gh-proxy.com/https://github.com/kld157/astrbot_plugin_mc_panel.git
+git clone https://zszzz.cc.cd/https://github.com/kld157/astrbot_plugin_mc_panel.git
 ```
 
-`gh-proxy.com` 是克隆加速站，只在这次 clone 时套一层，之后 `git pull` 走的是正常 GitHub 地址。直连拉得动的话把前缀去掉就行。
+`zszzz.cc.cd` 是加速站，后面直接拼完整地址（`https://` 别省）。只在这次 clone 时套一层，之后 `git pull` 走的是正常 GitHub 地址，直连拉得动就把前缀去掉。
 
 然后在 AstrBot 管理面板 → 插件管理 → 重载插件。
 
