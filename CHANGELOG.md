@@ -4,6 +4,7 @@
 
 - 插件本体改回独立仓库维护，`xiaoice-mcbot` 里不再留副本，改代码只在一处。
 - 推荐装法就是 `git clone` 到 `AstrBot/data/plugins/`，之后 `git pull` 即更新；mcbot 仓库里附了 `sync_panel.sh` 方便一键拉取 / 推送。
+- 加了插件图标 `logo.png`（草方块 + 浮起的白色面板卡片），AstrBot 插件列表和插件市场会直接用它。
 
 ## v1.0.2
 
