@@ -1,9 +1,9 @@
 # Changelog
 
-## v1.0.2 之后（仓库调整）
+## 未发布
 
-- 插件不再准备独立仓库，源码挂进 `xiaoice-mcbot` 仓库的 `astrbot_plugin_mc_panel/` 子目录，与 bot 同仓维护。
-- README 安装说明改为「从 mcbot 目录拷贝」或「sparse checkout 只拉子目录」。
+- 插件本体改回独立仓库维护，`xiaoice-mcbot` 里不再留副本，改代码只在一处。
+- 推荐装法就是 `git clone` 到 `AstrBot/data/plugins/`，之后 `git pull` 即更新；mcbot 仓库里附了 `sync_panel.sh` 方便一键拉取 / 推送。
 
 ## v1.0.2
 

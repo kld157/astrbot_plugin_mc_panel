@@ -30,7 +30,7 @@ git clone https://github.com/kld157/astrbot_plugin_mc_panel.git
 
 然后在 AstrBot 管理面板 → 插件管理 → 重载插件。
 
-> 插件本体在独立仓库 [astrbot_plugin_mc_panel](https://github.com/kld157/astrbot_plugin_mc_panel)，和它配套的 bot [xiaoice-mcbot](https://github.com/kld157/xiaoice-mcbot) 分开维护；bot 仓库里也保留了一份同源代码（`astrbot_plugin_mc_panel/`），方便一起改。
+> 插件本体独立维护：[astrbot_plugin_mc_panel](https://github.com/kld157/astrbot_plugin_mc_panel)，配套的 bot 在 [xiaoice-mcbot](https://github.com/kld157/xiaoice-mcbot)。两个仓库各管各的，互相不嵌套。
 
 ## 前置条件
 
