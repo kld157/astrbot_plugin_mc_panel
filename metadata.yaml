@@ -9,7 +9,7 @@ help: |
   - 小冰回应：桥接层最近给出的话
   - 动作记录：最新一次动作与最近的指令下发
   - 输入框：写一行内容，会通过 cmd.txt 交给游戏里的 bot
-version: 1.0.2
+version: 1.0.3
 author: 小冰
 repo: https://github.com/kld157/astrbot_plugin_mc_panel
 astrbot_version: ">=4.16,<5"
