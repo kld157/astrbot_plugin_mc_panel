@@ -1,5 +1,7 @@
 # MC 陪玩面板
 
+<img src="logo.png" width="96" align="right" alt="MC 陪玩面板">
+
 给 Minecraft 陪玩 bot（xiaoice-mcbot）装在 AstrBot 管理面板里的一个可视化页面。
 
 bot 在服务器里跑着，你只能翻几十 MB 的 `play.log` 猜它在干嘛；装上这个插件，直接在 AstrBot 网页上就能看到它活得怎么样、刚才说了什么、干了什么，还能隔空丢一句话进去。
