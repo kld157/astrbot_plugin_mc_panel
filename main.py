@@ -539,9 +539,12 @@ ENV_FIELDS = [
     ("mc_ver", "MC_VER"),
     ("mc_name", "MC_NAME"),
     ("mc_pw", "MC_PW"),
+    ("llm_key", "LLM_KEY"),        # key 只进 mc.env，llm.json 里不留明文
 ]
 
-LLM_FIELDS = [("llm_base", "base"), ("llm_model", "model"), ("llm_key", "key")]
+LLM_FIELDS = [("llm_base", "base"), ("llm_model", "model")]
+KEY_ENV = "LLM_KEY"
+QUOTED_ENV = {KEY_ENV}             # 这个文件会被 shell source，值加引号更稳
 
 
 def _apply_runtime_config(config: dict[str, Any] | None, mcbot_dir: str) -> list[str]:
@@ -556,18 +559,32 @@ def _apply_runtime_config(config: dict[str, Any] | None, mcbot_dir: str) -> list
         return []
 
     changed: list[str] = []
+    llm_path = os.path.join(mcbot_dir, "llm.json")
+    env_path = os.path.join(mcbot_dir, "mc.env")
+    current = _read_json(llm_path) or {}
+    current_env = _parse_env_file(env_path)
 
-    # 1) llm.json —— base / model / key（外加 auto 段）合并写回
+    # 0) 老配置迁移：md 里填了 key 就用它；没填但 llm.json 还留着明文 key，就搬进 mc.env 再删掉
+    cfg_key = str(config.get("llm_key") or "").strip()
+    if not cfg_key:
+        legacy_key = str(current.get("key") or "").strip()
+        if legacy_key and not current_env.get(KEY_ENV):
+            cfg_key = legacy_key
+
+    # 1) llm.json —— base / model（外加 auto 段）合并写回；key 一律不落这里
     llm_updates = {
         field: str(config.get(conf_key) or "").strip()
         for conf_key, field in LLM_FIELDS
     }
     auto_model = str(config.get("llm_auto_model") or "").strip()
     auto_touched = bool(auto_model) or ("llm_auto_think" in config)
-    if any(llm_updates.values()) or auto_touched:
-        llm_path = os.path.join(mcbot_dir, "llm.json")
-        current = _read_json(llm_path) or {}
+    touched = any(llm_updates.values()) or auto_touched or bool(current.get("key"))
+    if not touched and not current.get("keyEnv") and (cfg_key or current_env.get(KEY_ENV)):
+        touched = True        # 老 llm.json 没写 keyEnv，但 key 已在环境变量里 → 补上，让 llm.js 认得
+    if touched:
         merged = dict(current)
+        merged.pop("key", None)                     # 历史明文 key 清掉
+        merged.setdefault("keyEnv", KEY_ENV)        # 告诉 llm.js 去环境变量找
         for field, value in llm_updates.items():
             if value:
                 merged[field] = value
@@ -586,14 +603,15 @@ def _apply_runtime_config(config: dict[str, Any] | None, mcbot_dir: str) -> list
         if _write_if_changed(llm_path, text, 0o600):
             changed.append("llm.json")
 
-    # 2) mc.env —— 就地更新 MC_* 变量，别的行原样保留
+    # 2) mc.env —— 就地更新 MC_* / LLM_KEY，别的行原样保留
     env_updates = {
         env_key: str(config.get(conf_key) or "").strip()
         for conf_key, env_key in ENV_FIELDS
     }
+    if cfg_key:
+        env_updates[KEY_ENV] = cfg_key
     if any(env_updates.values()):
-        env_path = os.path.join(mcbot_dir, "mc.env")
-        order = ["MC_HOST", "MC_PORT", "MC_VER", "MC_NAME", "MC_PW"]
+        order = ["MC_HOST", "MC_PORT", "MC_VER", "MC_NAME", "MC_PW", KEY_ENV]
         old_lines: list[str] = []
         if os.path.isfile(env_path):
             try:
@@ -611,13 +629,13 @@ def _apply_runtime_config(config: dict[str, Any] | None, mcbot_dir: str) -> list
                 key = stripped.split("=", 1)[0].strip()
                 new_value = env_updates.get(key)
                 if key in env_updates and new_value:
-                    lines.append(f"{key}={new_value}")
+                    lines.append(_fmt_env(key, new_value))
                     seen.add(key)
                     continue
             lines.append(line)
         for key in order:
             if env_updates.get(key) and key not in seen:
-                lines.append(f"{key}={env_updates[key]}")
+                lines.append(_fmt_env(key, env_updates[key]))
                 seen.add(key)
         text = "\n".join(lines).rstrip("\n") + "\n"
         if _write_if_changed(env_path, text, 0o600):
@@ -626,24 +644,51 @@ def _apply_runtime_config(config: dict[str, Any] | None, mcbot_dir: str) -> list
     return changed
 
 
-def _mask_secret(value: str, keep: int = 4) -> str:
-    """sk-535a4199... → sk-5****592c，面板上只露头尾。"""
-    value = value or ""
-    if len(value) <= keep * 2:
-        return "*" * len(value)
-    return f"{value[:keep]}****{value[-keep:]}"
+def _fmt_env(key: str, value: str) -> str:
+    """写 mc.env 的一行；key 类值加引号，免得 shell source 时被特殊字符坑。"""
+    if key in QUOTED_ENV:
+        return f'{key}="{value}"'
+    return f"{key}={value}"
+
+
+def _mask_secret(value: str, keep: int = 3) -> str:
+    """sk-535a4199...92c → sk-535…92c：只露头尾各 3 个字符，sk- 前缀不算字数。"""
+    s = (value or "").strip()
+    if not s:
+        return ""
+    prefix = "sk-" if s.lower().startswith("sk-") else ""
+    body = s[len(prefix):]
+    if len(body) <= keep * 2:
+        return prefix + "*" * max(len(body), 3)
+    return f"{prefix}{body[:keep]}…{body[-keep:]}"
+
+
+def _resolve_key(llm: dict[str, Any], env: dict[str, str]) -> tuple[str, str]:
+    """按 llm.js 同样的顺序找 key：keyEnv → LLM_KEY → DEEPSEEK_API_KEY → OPENAI_API_KEY。"""
+    for name in (llm.get("keyEnv"), "LLM_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY"):
+        name = str(name or "").strip()
+        if not name:
+            continue
+        value = str(env.get(name) or "").strip()
+        if value:
+            return value, name
+    legacy = str(llm.get("key") or "").strip()
+    if legacy:
+        return legacy, "llm.json（建议搬到 mc.env）"
+    return "", ""
 
 
 def _collect_runtime_config(mcbot_dir: str) -> dict[str, Any]:
-    """面板上展示配置状态，key 只露头尾。"""
+    """面板上展示配置状态，key 只露头尾各 3 个。"""
     llm = _read_json(os.path.join(mcbot_dir, "llm.json")) or {}
     env = _parse_env_file(os.path.join(mcbot_dir, "mc.env"))
-    raw_key = str(llm.get("key") or "")
+    raw_key, key_from = _resolve_key(llm, env)
     return {
         "llm_ready": bool(llm.get("base") and llm.get("model") and raw_key),
         "llm_base": llm.get("base") or "",
         "llm_model": llm.get("model") or "",
         "llm_key_masked": _mask_secret(raw_key),
+        "llm_key_from": key_from,
         "llm_auto_model": (llm.get("auto") or {}).get("model") or "",
         "llm_auto_think": (llm.get("auto") or {}).get("think", None),
         "mc_host": env.get("MC_HOST", ""),
@@ -654,7 +699,7 @@ def _collect_runtime_config(mcbot_dir: str) -> dict[str, Any]:
     }
 
 
-@register(PLUGIN_NAME, "xiaoice", "MC 陪玩面板", "v1.0.2")
+@register(PLUGIN_NAME, "xiaoice", "MC 陪玩面板", "v1.0.4")
 class MCBotPanelPlugin(Star):
     def __init__(self, context: Context, config: dict | None = None):
         super().__init__(context)

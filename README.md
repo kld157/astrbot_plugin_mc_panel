@@ -14,7 +14,7 @@ bot 在服务器里跑着，你只能翻几十 MB 的 `play.log` 猜它在干嘛
 | 进程守护 | `play.js`、`mc_bridge.py` 是否在跑（读 `/proc`，不是猜的） |
 | 聊天流 | 游戏内最近 60 条聊天，bot 自己的话会标出来，小冰的回应挂在下面 |
 | 动作记录 | 最近一次动作的结果（成功 / 失败 + 描述） |
-| 配置速览 | LLM 是否配好（key 只露头尾）、连的哪个服、游戏名有没有密码 |
+| 配置速览 | LLM 是否配好（key 只露头尾各 3 位）、连的哪个服、游戏名有没有密码 |
 | 输入框 | 写一行，1 秒内进到游戏里；`ACT ...` 开头则走动作通道 |
 
 ## 安装
@@ -51,7 +51,7 @@ git clone https://github.com/kld157/astrbot_plugin_mc_panel.git
 | --- | --- |
 | `mcbot_dir` | mcbot 目录，如 `/AstrBot/data/workspaces/xxx/mcbot`。**留空会自动扫** `data/workspaces/*/mcbot` |
 | `sync_secrets` | 是否把下面的 LLM / 服务器配置写进 mcbot 的 `llm.json`、`mc.env`。关掉就纯当看板 |
-| `llm_base` / `llm_model` / `llm_key` | LLM 接口地址、模型名、API Key。**留空 = 不改**，沿用 mcbot 里原来的 |
+| `llm_base` / `llm_model` / `llm_key` | LLM 接口地址、模型名、API Key。**留空 = 不改**，沿用 mcbot 里原来的。填的 key 会写进 `mc.env` 的 `LLM_KEY`（`llm.json` 里不再存明文） |
 | `llm_auto_model` / `llm_auto_think` | bot 自主行动时单独用的模型，以及是否开思考 |
 | `mc_host` / `mc_port` / `mc_ver` / `mc_name` / `mc_pw` | 服务器地址、端口、版本、游戏名、登录密码。**留空 = 不改** |
 
@@ -93,7 +93,8 @@ AstrBot 版本太低，不支持 `register_web_api`。插件日志里会有 `当
 ## 安全说明
 
 - 面板接口挂在 AstrBot 自身的鉴权后面，不要在公网暴露管理面板；
-- `llm_key` 在面板上只显示头尾各 4 位，落盘权限 `600`；
+- `llm_key` 在面板上只显示头尾各 3 位（`sk-` 不算字数，太短的整个隐去），落盘在 `mc.env` 的 `LLM_KEY`，权限 `600`；
+- 老配置里 `llm.json` 的明文 `key` 会在插件启动时自动搬进 `mc.env` 并从 json 里删掉；
 - 插件只读 mcbot 目录下的文件，写入仅限 `llm.json`、`mc.env`、`cmd.txt`。
 
 ## 版本

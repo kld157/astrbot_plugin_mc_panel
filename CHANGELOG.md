@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.4
+
+key 不再落进 `llm.json`，改走环境变量；面板只露头尾各 3 位。
+
+- 面板里填 `llm_key`，现在写进 `mcbot/mc.env` 的 `LLM_KEY="..."`（会被 shell source，所以加了引号），并给 `llm.json` 补 `"keyEnv": "LLM_KEY"`；json 里不再留明文。
+- 老配置自动迁移：`llm.json` 里还有明文 `key`、`mc.env` 又没有 `LLM_KEY` 时，启动就把 key 搬进 `mc.env` 并从 json 删掉，一次完成，不用手动改。
+- 脱敏改成「头尾各 3 个字符」：`sk-535a…92c` → `sk-535…92c`，`sk-` 前缀不算字数；太短的整条隐去成 `sk-***`。以前是头尾各 4 位。
+- 面板状态卡的 key 按 `keyEnv` → `LLM_KEY` → `DEEPSEEK_API_KEY` → `OPENAI_API_KEY` 的顺序找，跟 `llm.js` 一致，所以只填环境变量也算「就绪」。
+- 修掉「配置项全留空也会重写 `llm.json`」的副作用：留空现在真的一字节不动。
+
 ## v1.0.3
 
 把面板从 bot 仓库里独立出来，顺手给它配了张脸。

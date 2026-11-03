@@ -39,7 +39,7 @@
     "description": "LLM API Key",
     "type": "string",
     "default": "",
-    "hint": "填了就会写进 mcbot/llm.json（权限 600）；留空 = 保持原样。面板上只显示头尾几位"
+    "hint": "填了会写进 mcbot/mc.env 的 LLM_KEY（权限 600），并给 llm.json 补上 keyEnv；留空 = 保持原样。面板上只显示头尾各 3 个字符（sk- 不算）"
   },
   "mc_host": {
     "description": "MC 服务器地址",
